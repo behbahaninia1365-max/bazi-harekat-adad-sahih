@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>بازی حرکت روی محور اعداد صحیح | ریاضی هفتم</title>
+<style>
+  :root { --ink:#24324a; --blue:#3568d4; --teal:#18a999; --pink:#f16c9b; --gold:#f3b63f; --paper:#ffffff; }
+  * { box-sizing:border-box; }
+  body {
+    margin:0; min-height:100vh; font-family:Tahoma, Arial, sans-serif; color:var(--ink);
+    background:linear-gradient(135deg,#eaf5ff 0%,#fff0f6 52%,#fff8df 100%);
+    padding:18px;
+  }
+  .app { max-width:980px; margin:auto; }
+  header { text-align:center; padding:14px 10px 8px; }
+  h1 { margin:0 0 8px; font-size:clamp(1.45rem,4vw,2.2rem); color:#244c9b; }
+  .subtitle { margin:0; font-size:1rem; line-height:1.9; }
+  .panel { background:rgba(255,255,255,.94); border:2px solid #dce8ff; border-radius:22px; padding:18px; margin:14px 0; box-shadow:0 8px 22px #31527d12; }
+  .topline { display:flex; gap:10px; flex-wrap:wrap; justify-content:space-between; align-items:center; }
+  .pill { background:#edf3ff; border-radius:999px; padding:9px 14px; font-weight:bold; }
+  .pill.score { background:#e2fbf5; color:#087c70; }
+  .question { text-align:center; font-size:1.22rem; line-height:2; font-weight:bold; margin:14px 0; }
+  .instruction { text-align:center; color:#56657b; line-height:1.9; margin:0 0 14px; }
+  .numberline-wrap { overflow-x:auto; padding:12px 2px 4px; }
+  svg { display:block; width:100%; min-width:320px; height:auto; }
+  .answer-area { display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:10px; margin-top:15px; }
+  label { font-weight:bold; }
+  input[type=number] { width:120px; padding:12px; border:2px solid #b8c9ed; border-radius:12px; font:inherit; font-size:1.15rem; text-align:center; }
+  button, select { font:inherit; border:0; border-radius:12px; padding:12px 17px; cursor:pointer; }
+  button { font-weight:bold; transition:transform .12s, filter .12s; }
+  button:hover { filter:brightness(.97); transform:translateY(-1px); }
+  .primary { color:white; background:var(--blue); }
+  .secondary { background:#eaf0ff; color:#244c9b; }
+  .next { color:#fff; background:var(--teal); }
+  .hint { background:#fff2cf; color:#785000; }
+  .feedback { min-height:34px; text-align:center; margin-top:13px; font-weight:bold; line-height:1.8; }
+  .feedback.good { color:#07836f; }
+  .feedback.bad { color:#c23c67; }
+  .controls { display:flex; justify-content:center; flex-wrap:wrap; gap:9px; margin-top:12px; }
+  .settings { display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:10px; }
+  select { background:#f3f6ff; border:1px solid #ccd8f0; }
+  .mini-note { font-size:.9rem; color:#66738a; text-align:center; line-height:1.8; }
+  .rules { display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:10px; }
+  .rule { background:#f7f9ff; border-radius:14px; padding:12px; line-height:1.8; }
+  .rule strong { color:#244c9b; }
+  footer { text-align:center; padding:10px; color:#63718a; font-size:.86rem; }
+  @media(max-width:560px) {
+    body { padding:9px; } .panel { padding:13px; border-radius:17px; }
+    .question { font-size:1.08rem; } .pill { font-size:.9rem; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>🎯 بازی حرکت روی محور اعداد صحیح | بهبهانی نیا</h1>
+    <p class="subtitle">ریاضی پایه هفتم | حرکت کن، عدد حرکت را تشخیص بده و پاسخت را بررسی کن!</p>
+  </header>
+
+  <section class="panel">
+    <div class="topline">
+      <span class="pill" id="roundLabel">مرحله ۱</span>
+      <span class="pill score" id="scoreLabel">امتیاز: ۰</span>
+      <span class="pill" id="streakLabel">پاسخ درست پیاپی: ۰</span>
+    </div>
+    <p class="question" id="question">مهره از صفر شروع می‌کند...</p>
+    <p class="instruction" id="instruction">به جهت حرکت و تعداد خانه‌ها دقت کن.</p>
+    <div class="numberline-wrap">
+      <svg id="numberline" viewBox="0 0 900 190" role="img" aria-label="محور اعداد صحیح"></svg>
+    </div>
+    <div class="answer-area">
+      <label for="sign">عدد حرکت:</label>
+      <select id="sign" aria-label="علامت عدد حرکت">
+        <option value="+">+ مثبت</option>
+        <option value="-">− منفی</option>
+      </select>
+      <input id="answer" type="number" min="0" step="1" placeholder="عدد" inputmode="numeric" aria-label="اندازه عدد حرکت">
+      <button class="primary" id="checkBtn">بررسی پاسخ ✓</button>
+    </div>
+    <div class="feedback" id="feedback" aria-live="polite"></div>
+    <div class="controls">
+      <button class="hint" id="hintBtn">💡 راهنمایی</button>
+      <button class="secondary" id="showBtn">نمایش پاسخ</button>
+      <button class="next" id="nextBtn">سؤال بعدی ←</button>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="settings">
+      <label for="difficulty">سطح بازی:</label>
+      <select id="difficulty">
+        <option value="easy">آسان: حرکت‌های ۱ تا ۵</option>
+        <option value="medium" selected>متوسط: حرکت‌های ۱ تا ۸</option>
+        <option value="hard">چالشی: حرکت‌های ۱ تا ۱۰</option>
+      </select>
+      <button class="secondary" id="resetBtn">شروع دوباره ↻</button>
+    </div>
+    <p class="mini-note">حرکت به راست یعنی عدد مثبت، حرکت به چپ یعنی عدد منفی و نماندن در جای خود یعنی صفر.</p>
+  </section>
+
+  <section class="panel">
+    <h2 style="margin:0 0 10px;font-size:1.15rem;color:#244c9b">📌 یادآوری کوتاه</h2>
+    <div class="rules">
+      <div class="rule"><strong>حرکت به راست →</strong><br>عدد حرکت مثبت است؛ مثلاً ۴+.</div>
+      <div class="rule"><strong>حرکت به چپ ←</strong><br>عدد حرکت منفی است؛ مثلاً ۳−.</div>
+      <div class="rule"><strong>بدون حرکت ●</strong><br>عدد حرکت صفر است؛ نه به راست و نه به چپ.</div>
+    </div>
+  </section>
+  <footer>با دقت روی محور حرکت کن؛ هر پاسخ درست، یک قدم به تسلط نزدیک‌ترت می‌کند! 🌟</footer>
+</div>
+
+<script>
+(() => {
+  const svg = document.getElementById('numberline');
+  const questionEl = document.getElementById('question');
+  const instructionEl = document.getElementById('instruction');
+  const answerEl = document.getElementById('answer');
+  const feedbackEl = document.getElementById('feedback');
+  const scoreLabel = document.getElementById('scoreLabel');
+  const roundLabel = document.getElementById('roundLabel');
+  const streakLabel = document.getElementById('streakLabel');
+  const difficultyEl = document.getElementById('difficulty');
+  let target = 0, start = 0, end = 0, round = 0, score = 0, streak = 0;
+  let answered = false, hintUsed = false, revealed = false;
+
+  const fa = n => String(n).replace(/-/g,'−').replace(/\d/g, d => '۰۱۲۳۴۵۶۷۸۹'[d]);
+  const signedFa = n => n > 0 ? '+' + fa(n) : fa(n);
+  const range = () => difficultyEl.value === 'easy' ? 5 : difficultyEl.value === 'medium' ? 8 : 10;
+  const randInt = (min,max) => Math.floor(Math.random()*(max-min+1))+min;
+
+  function makeQuestion() {
+    round++; answered = false; hintUsed = false; revealed = false;
+    answerEl.value = ''; answerEl.disabled = false; document.getElementById('sign').disabled = false; document.getElementById('sign').value = '+';
+    feedbackEl.textContent = ''; feedbackEl.className = 'feedback';
+    document.getElementById('checkBtn').disabled = false;
+    const max = range();
+    // Include positive, negative, and zero moves regularly.
+    const kind = (round % 5 === 0) ? 'zero' : (round % 2 === 0 ? 'negative' : 'positive');
+    if (kind === 'zero') {
+      start = randInt(-Math.min(4,max), Math.min(4,max));
+      target = 0; end = start;
+    } else {
+      const magnitude = randInt(1,max);
+      target = kind === 'positive' ? magnitude : -magnitude;
+      start = randInt(-Math.max(2,Math.floor(max/2)), Math.max(2,Math.floor(max/2)));
+      end = start + target;
+    }
+    questionEl.textContent = 'حرکت مهره روی محور را ببین و عدد حرکت را تشخیص بده.';
+    instructionEl.textContent = 'به جهت پیکان و تعداد واحدهایی که مهره حرکت کرده دقت کن.';
+    roundLabel.textContent = 'مرحله ' + fa(round);
+    scoreLabel.textContent = 'امتیاز: ' + fa(score);
+    streakLabel.textContent = 'پاسخ درست پیاپی: ' + fa(streak);
+    drawLine(false);
+    answerEl.focus({preventScroll:true});
+  }
+
+  function drawLine(showAnswer) {
+    const maxAbs = Math.max(6, Math.abs(start), Math.abs(end), Math.abs(start-target), Math.abs(end-target));
+    const extent = Math.min(12, Math.max(6, maxAbs + 1));
+    const left = 55, right = 845, y = 92, step = (right-left)/(extent*2);
+    const x = n => left + (n+extent)*step;
+    let s = '';
+    s += `<line x1="${left-12}" y1="${y}" x2="${right+12}" y2="${y}" stroke="#7890b8" stroke-width="3" stroke-linecap="round"/>`;
+    s += `<path d="M ${left-12} ${y} l 12 -7 l 0 14 z" fill="#7890b8"/><path d="M ${right+12} ${y} l -12 -7 l 0 14 z" fill="#7890b8"/>`;
+    for(let n=-extent;n<=extent;n++){
+      const xx=x(n);
+      s += `<line x1="${xx}" y1="${y-8}" x2="${xx}" y2="${y+8}" stroke="${n===0?'#24324a':'#7890b8'}" stroke-width="${n===0?3:2}"/>`;
+      s += `<text x="${xx}" y="${y+30}" text-anchor="middle" font-size="15" fill="${n===0?'#24324a':'#52627b'}" font-family="Tahoma,Arial">${fa(n)}</text>`;
+    }
+    // Show the full movement immediately; hide start/end labels so students infer the move.
+    const color = target > 0 ? '#18a999' : target < 0 ? '#f16c9b' : '#f3b63f';
+    if(target !== 0) {
+      s += `<line x1="${x(start)}" y1="${y-22}" x2="${x(end)}" y2="${y-22}" stroke="${color}" stroke-width="5" stroke-linecap="round"/>`;
+      const dir = target > 0 ? 1 : -1;
+      const tip=x(end), base=tip-dir*13;
+      s += `<path d="M ${tip} ${y-22} L ${base} ${y-31} L ${base} ${y-13} Z" fill="${color}"/>`;
+    } else {
+      s += `<circle cx="${x(start)}" cy="${y-22}" r="6" fill="${color}"/>`;
+    }
+    s += `<circle cx="${x(start)}" cy="${y}" r="10" fill="#3568d4" stroke="white" stroke-width="3"/>`;
+    s += `<circle cx="${x(end)}" cy="${y}" r="10" fill="${color}" stroke="white" stroke-width="3"/>`;
+    if (showAnswer || revealed) {
+      s += `<text x="450" y="165" text-anchor="middle" font-size="16" font-weight="bold" fill="${color}" font-family="Tahoma,Arial">عدد حرکت: ${signedFa(target)}</text>`;
+    }
+    svg.innerHTML = s;
+  }
+
+  function checkAnswer() {
+    if(answered) return;
+    const sign = document.getElementById('sign').value;
+    if(sign !== '0' && (answerEl.value.trim()==='' || Number(answerEl.value) < 0)) {
+      feedbackEl.textContent = 'علامت را انتخاب کن و اندازهٔ عدد را بدون علامت بنویس 🙂';
+      feedbackEl.className = 'feedback bad'; return;
+    }
+    const magnitude = Number(answerEl.value || 0);
+    const value = magnitude === 0 ? 0 : (sign === '-' ? -magnitude : magnitude);
+    answered = true; answerEl.disabled = true; document.getElementById('sign').disabled = true;
+    document.getElementById('checkBtn').disabled = true;
+    if(value === target) {
+      const points = hintUsed ? 5 : 10;
+      score += points; streak++;
+      feedbackEl.textContent = `آفرین! پاسخ درست است 🎉 ${fa(points)} امتیاز گرفتی. عدد حرکت ${signedFa(target)} است.`;
+      feedbackEl.className = 'feedback good';
+    } else {
+      streak = 0;
+      feedbackEl.textContent = `هنوز درست نیست. پاسخ درست ${signedFa(target)} است. اختلاف دو عدد پایان و شروع را با جهت حرکت بررسی کن.`;
+      feedbackEl.className = 'feedback bad';
+    }
+    scoreLabel.textContent = 'امتیاز: ' + fa(score);
+    streakLabel.textContent = 'پاسخ درست پیاپی: ' + fa(streak);
+    drawLine(true);
+  }
+
+  document.getElementById('checkBtn').addEventListener('click', checkAnswer);
+  answerEl.addEventListener('keydown', e => { if(e.key === 'Enter') checkAnswer(); });
+  document.getElementById('nextBtn').addEventListener('click', makeQuestion);
+  document.getElementById('hintBtn').addEventListener('click', () => {
+    if(answered) return;
+    hintUsed = true;
+    const direction = target > 0 ? 'به سمت راست حرکت کرده است؛ پس عدد حرکت مثبت است.' :
+      target < 0 ? 'به سمت چپ حرکت کرده است؛ پس عدد حرکت منفی است.' :
+      'از جای خود تکان نخورده است؛ پس عدد حرکت صفر است.';
+    feedbackEl.textContent = 'راهنمایی: ' + direction + ' تعداد واحدها برابر فاصلهٔ شروع تا پایان است.';
+    feedbackEl.className = 'feedback';
+  });
+  document.getElementById('showBtn').addEventListener('click', () => {
+    if(answered) return;
+    revealed = true; drawLine(true);
+    feedbackEl.textContent = 'پاسخ: ' + signedFa(target) + ' — حالا می‌توانی سؤال بعدی را انتخاب کنی.';
+    feedbackEl.className = 'feedback';
+    answered = true; answerEl.disabled = true; document.getElementById('sign').disabled = true;
+    document.getElementById('checkBtn').disabled = true;
+  });
+  document.getElementById('resetBtn').addEventListener('click', () => {
+    round = 0; score = 0; streak = 0; makeQuestion();
+  });
+  difficultyEl.addEventListener('change', makeQuestion);
+  makeQuestion();
+})();
+</script>
+</body>
+</html>
